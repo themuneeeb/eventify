@@ -1,0 +1,304 @@
+// ──────────────────────────────────────────────
+// Eventify — Prisma Schema
+// Database: PostgreSQL
+// ──────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ───────────────────────────────────
+
+enum Role {
+  ADMIN
+  ORGANIZER
+  ATTENDEE
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum TicketTypeKind {
+  FREE
+  STANDARD
+  VIP
+  EARLY_BIRD
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  CANCELLED
+  EXPIRED
+}
+
+enum NotificationType {
+  REGISTRATION
+  TICKET_PURCHASE
+  EVENT_REMINDER
+  EVENT_CANCELLATION
+  ORGANIZER_APPROVAL
+  TICKET_SALE
+}
+
+// ─── MODELS ──────────────────────────────────
+
+model User {
+  id              String    @id @default(cuid())
+  name            String?
+  email           String    @unique
+  emailVerified   DateTime?
+  hashedPassword  String?
+  image           String?
+  role            Role      @default(ATTENDEE)
+  isBlocked       Boolean   @default(false)
+  isApproved      Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  organizedEvents Event[]          @relation("OrganizerEvents")
+  orders          Order[]
+  tickets         Ticket[]
+  notifications   Notification[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── EVENT DOMAIN ────────────────────────────
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  events Event[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Location {
+  id      String  @id @default(cuid())
+  name    String
+  address String
+  city    String
+  state   String?
+  country String
+  zipCode String?
+  lat     Float?
+  lng     Float?
+
+  events Event[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([city])
+  @@index([country])
+  @@map("locations")
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  description String      @db.Text
+  status      EventStatus @default(DRAFT)
+
+  startDate DateTime
+  endDate   DateTime
+
+  coverImage String?
+  images     String[]
+
+  organizerId String
+  categoryId  String
+  locationId  String
+
+  organizer User     @relation("OrganizerEvents", fields: [organizerId], references: [id])
+  category  Category @relation(fields: [categoryId], references: [id])
+  location  Location @relation(fields: [locationId], references: [id])
+
+  ticketTypes TicketType[]
+  orders      Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([startDate])
+  @@index([organizerId])
+  @@index([categoryId])
+  @@map("events")
+}
+
+model TicketType {
+  id          String         @id @default(cuid())
+  name        String
+  kind        TicketTypeKind @default(STANDARD)
+  price       Decimal        @default(0) @db.Decimal(10, 2)
+  currency    String         @default("usd")
+  quantity    Int
+  sold        Int            @default(0)
+  description String?
+  saleStart   DateTime?
+  saleEnd     DateTime?
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  tickets Ticket[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@map("ticket_types")
+}
+
+// ─── ORDER & TICKET DOMAIN ──────────────────
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique @default(cuid())
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  currency        String      @default("usd")
+
+  stripeSessionId   String? @unique
+  stripePaymentId   String? @unique
+  stripeInvoiceUrl  String?
+
+  userId  String
+  eventId String
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  tickets Ticket[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([stripeSessionId])
+  @@map("orders")
+}
+
+model Ticket {
+  id     String       @id @default(cuid())
+  status TicketStatus @default(VALID)
+  qrCode String       @unique
+
+  checkedInAt DateTime?
+
+  userId       String
+  orderId      String
+  ticketTypeId String
+
+  user       User       @relation(fields: [userId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([qrCode])
+  @@map("tickets")
+}
+
+// ─── NOTIFICATION DOMAIN ─────────────────────
+
+model Notification {
+  id      String           @id @default(cuid())
+  type    NotificationType
+  title   String
+  message String           @db.Text
+  isRead  Boolean          @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ─── PLATFORM SETTINGS ──────────────────────
+
+model PlatformSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String @db.Text
+
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
+}

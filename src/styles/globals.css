@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/* ─── CUSTOM THEME: Brand Color Palette ─���───────── */
+@theme {
+  /* Primary Colors */
+  --color-brand-charcoal: #262626;
+  --color-brand-cream: #e2e8ce;
+  --color-brand-sage: #acbfa4;
+  --color-brand-orange: #ff7f11;
+
+  /* Derived Colors */
+  --color-brand-orange-dark: #cc6600;
+  --color-brand-off-white: #f5f5f0;
+  --color-brand-soft-black: #3d3d3d;
+
+  /* Semantic Colors */
+  --color-destructive: #e53e3e;
+  --color-success: #38a169;
+
+  /* Font Family */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  /* Custom Animations */
+  --animate-slide-in-right: slide-in-from-right 0.3s ease-out;
+}
+
+/* Custom keyframes */
+@keyframes slide-in-from-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ─── BASE STYLES ───────────────────────────────── */
+@layer base {
+  body {
+    @apply bg-brand-off-white text-brand-charcoal antialiased;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Accessible focus rings (HCI: Visibility) */
+  *:focus-visible {
+    @apply outline-brand-orange outline-2 outline-offset-2;
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: oklch(from #ff7f11 l c h / 0.2);
+    @apply text-brand-charcoal;
+  }
+}
+
+/* ─── COMPONENT UTILITIES ───────────────────────── */
+@layer components {
+  .container-main {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}
