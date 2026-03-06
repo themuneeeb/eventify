@@ -1,7 +1,11 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getOrderByStripeSession } from "@/services/order.service";
-import { db } from "@/lib/db";
+import {
+  getOrderByStripeSession,
+  getOrderById,
+  createOrderFromCheckout,
+} from "@/services/order.service";
+import { stripe } from "@/lib/stripe";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,39 +36,47 @@ export default async function CheckoutSuccessPage({
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  let order;
+  let order: Awaited<ReturnType<typeof getOrderByStripeSession>> | null = null;
 
   if (sp.session_id) {
+    // First, try to find the order created by the webhook
     order = await getOrderByStripeSession(sp.session_id);
+
+    // Fallback: if webhook hasn't fired yet, retrieve the Stripe session
+    // and create the order directly
+    if (!order) {
+      try {
+        const stripeSession = await stripe.checkout.sessions.retrieve(sp.session_id);
+
+        if (stripeSession.payment_status === "paid" && stripeSession.metadata) {
+          const { userId, eventId, items: itemsRaw } = stripeSession.metadata;
+
+          if (userId && eventId && itemsRaw) {
+            const items = JSON.parse(itemsRaw) as {
+              ticketTypeId: string;
+              quantity: number;
+            }[];
+
+            await createOrderFromCheckout({
+              userId,
+              eventId,
+              stripeSessionId: stripeSession.id,
+              stripePaymentId: stripeSession.payment_intent as string,
+              totalAmount: (stripeSession.amount_total || 0) / 100,
+              currency: stripeSession.currency || "usd",
+              items,
+            });
+
+            // Re-fetch with full includes
+            order = await getOrderByStripeSession(sp.session_id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to retrieve Stripe session or create order:", err);
+      }
+    }
   } else if (sp.order_id) {
-    order = await db.order.findUnique({
-      where: { id: sp.order_id },
-      include: {
-        event: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            coverImage: true,
-            startDate: true,
-            endDate: true,
-            location: {
-              select: { name: true, city: true, country: true },
-            },
-          },
-        },
-        tickets: {
-          include: {
-            ticketType: {
-              select: { id: true, name: true, kind: true, price: true },
-            },
-          },
-        },
-        user: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-    });
+    order = await getOrderById(sp.order_id);
   }
 
   // If order doesn't exist yet (webhook hasn't fired), show a pending state

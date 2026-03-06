@@ -60,34 +60,43 @@ export async function createOrderFromCheckout(data: {
 
 // ─── GET ORDER BY STRIPE SESSION ─────────────
 
+const orderWithFullIncludes = {
+  event: {
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      coverImage: true,
+      startDate: true,
+      endDate: true,
+      location: {
+        select: { name: true, city: true, country: true },
+      },
+    },
+  },
+  tickets: {
+    include: {
+      ticketType: {
+        select: { id: true, name: true, kind: true, price: true },
+      },
+    },
+  },
+  user: {
+    select: { id: true, name: true, email: true },
+  },
+} as const;
+
 export async function getOrderByStripeSession(stripeSessionId: string) {
   return db.order.findUnique({
     where: { stripeSessionId },
-    include: {
-      event: {
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          coverImage: true,
-          startDate: true,
-          endDate: true,
-          location: {
-            select: { name: true, city: true, country: true },
-          },
-        },
-      },
-      tickets: {
-        include: {
-          ticketType: {
-            select: { id: true, name: true, kind: true, price: true },
-          },
-        },
-      },
-      user: {
-        select: { id: true, name: true, email: true },
-      },
-    },
+    include: orderWithFullIncludes,
+  });
+}
+
+export async function getOrderById(id: string) {
+  return db.order.findUnique({
+    where: { id },
+    include: orderWithFullIncludes,
   });
 }
 

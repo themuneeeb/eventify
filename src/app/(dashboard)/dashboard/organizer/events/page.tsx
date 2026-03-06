@@ -19,7 +19,16 @@ export default async function OrganizerEventsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const events = await getEventsByOrganizer(session.user.id);
+  const rawEvents = await getEventsByOrganizer(session.user.id);
+
+  // Serialize Decimal objects to plain numbers for Client Components
+  const events = rawEvents.map((event) => ({
+    ...event,
+    ticketTypes: event.ticketTypes.map((tt) => ({
+      ...tt,
+      price: Number(tt.price),
+    })),
+  }));
 
   return (
     <div>

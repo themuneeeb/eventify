@@ -23,7 +23,7 @@ export async function registerAction(
   const validated = registerSchema.safeParse(raw);
 
   if (!validated.success) {
-    return { error: validated.error.issues[0]?.message ?? "Invalid input" };
+    return { error: validated.error.issues[0].message };
   }
 
   const { name, email, password, role } = validated.data;
@@ -69,14 +69,27 @@ export async function loginAction(
   const validated = loginSchema.safeParse(raw);
 
   if (!validated.success) {
-    return { error: validated.error.issues[0]?.message ?? "Invalid input" };
+    return { error: validated.error.issues[0].message };
   }
+
+  // Look up user to determine role-based redirect
+  const user = await db.user.findUnique({
+    where: { email: validated.data.email },
+    select: { role: true },
+  });
+
+  const redirectTo =
+    user?.role === "ATTENDEE" || !user
+      ? "/events"
+      : user?.role === "ADMIN"
+        ? "/dashboard/admin"
+        : "/dashboard/organizer";
 
   try {
     await signIn("credentials", {
       email: validated.data.email,
       password: validated.data.password,
-      redirectTo: "/dashboard",
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -87,7 +100,6 @@ export async function loginAction(
           return { error: "Something went wrong. Please try again." };
       }
     }
-    // Next.js redirect throws an error — we need to re-throw it
     throw error;
   }
 }
@@ -95,7 +107,9 @@ export async function loginAction(
 // ─── GOOGLE SIGN IN ──────────────────────────
 
 export async function googleSignInAction() {
-  await signIn("google", { redirectTo: "/dashboard" });
+  // Google OAuth users default to ATTENDEE, so redirect to /events
+  // The middleware will handle organizer/admin correctly on subsequent visits
+  await signIn("google", { redirectTo: "/events" });
 }
 
 // ─── SIGN OUT ────────────────────────────────

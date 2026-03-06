@@ -137,6 +137,7 @@ export async function createCheckoutSessionAction(
     // External Stripe URL — bypass Next.js typed route check
     redirect(checkoutSession.url as never);
   } catch (err) {
+    if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
     console.error("Stripe checkout error:", err);
     return { error: "Payment processing failed. Please try again." };
   }

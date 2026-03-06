@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
+import { signOutAction } from "@/actions/auth.actions";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,10 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from "../../components/ui/dropdown-menu";
-import { Avatar, AvatarImage, AvatarFallback } from "../../components/ui/avatar";
-import { LayoutDashboard, LogOut, Settings } from "lucide-react";
-import { getDashboardRedirectByRole } from "../../config/dashboard";
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { LayoutDashboard, LogOut, Settings, Ticket, ShoppingCart } from "lucide-react";
+import { getDashboardRedirectByRole } from "@/config/dashboard";
+import { Badge } from "@/components/ui/badge";
 
 interface UserMenuProps {
   user: {
@@ -22,8 +24,7 @@ interface UserMenuProps {
     role?: string;
   };
 }
-import { Badge } from "@/components/ui/badge";
-import { signOutAction } from "@/actions/auth.actions";
+
 export function UserMenu({ user }: UserMenuProps) {
   const initials = user.name
     ? user.name
@@ -35,6 +36,7 @@ export function UserMenu({ user }: UserMenuProps) {
     : "U";
 
   const dashboardHref = getDashboardRedirectByRole(user.role || "ATTENDEE");
+  const isAttendee = user.role === "ATTENDEE";
 
   const roleLabelMap: Record<string, string> = {
     ADMIN: "Admin",
@@ -67,18 +69,41 @@ export function UserMenu({ user }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href={dashboardHref as Route} className="cursor-pointer">
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href={"/dashboard/settings" as Route} className="cursor-pointer">
-            <Settings className="h-4 w-4" />
-            Settings
-          </Link>
-        </DropdownMenuItem>
+
+        {isAttendee ? (
+          <>
+            {/* Attendee-specific links — no dashboard, show tickets & orders */}
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/attendee/tickets" className="cursor-pointer">
+                <Ticket className="h-4 w-4" />
+                My Tickets
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/attendee/orders" className="cursor-pointer">
+                <ShoppingCart className="h-4 w-4" />
+                My Orders
+              </Link>
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            {/* Organizer / Admin — show dashboard link */}
+            <DropdownMenuItem asChild>
+              <Link href={dashboardHref as Route} className="cursor-pointer">
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={"/dashboard/settings" as Route} className="cursor-pointer">
+                <Settings className="h-4 w-4" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={async () => {

@@ -1,13 +1,49 @@
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { Calendar, Ticket, DollarSign, Users } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
-// Placeholder — real data in Phase 6
-export default function OrganizerDashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function OrganizerDashboardPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+
+  const organizerId = session.user.id;
+
+  // Fetch all stats in parallel
+  const [events, ticketAggregates, orderAggregates] = await Promise.all([
+    db.event.count({ where: { organizerId } }),
+    db.ticketType.aggregate({
+      where: { event: { organizerId } },
+      _sum: { sold: true },
+    }),
+    db.order.aggregate({
+      where: { event: { organizerId }, status: "COMPLETED" },
+      _sum: { totalAmount: true },
+      _count: { _all: true },
+    }),
+  ]);
+
+  // Get unique attendees count
+  const uniqueAttendees = await db.order.findMany({
+    where: { event: { organizerId }, status: "COMPLETED" },
+    select: { userId: true },
+    distinct: ["userId"],
+  });
+
+  const totalEvents = events;
+  const ticketsSold = ticketAggregates._sum.sold ?? 0;
+  const revenue = Number(orderAggregates._sum.totalAmount ?? 0);
+  const attendees = uniqueAttendees.length;
+
   const stats = [
-    { label: "Total Events", value: "—", icon: Calendar },
-    { label: "Tickets Sold", value: "—", icon: Ticket },
-    { label: "Revenue", value: "—", icon: DollarSign },
-    { label: "Attendees", value: "—", icon: Users },
+    { label: "Total Events", value: totalEvents.toString(), icon: Calendar },
+    { label: "Tickets Sold", value: ticketsSold.toString(), icon: Ticket },
+    { label: "Revenue", value: formatCurrency(revenue), icon: DollarSign },
+    { label: "Attendees", value: attendees.toString(), icon: Users },
   ];
 
   return (

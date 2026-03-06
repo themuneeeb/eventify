@@ -11,31 +11,51 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
-      const isOnAdmin = nextUrl.pathname.startsWith("/dashboard/admin");
-      const isOnOrganizer = nextUrl.pathname.startsWith("/dashboard/organizer");
+      const pathname = nextUrl.pathname;
+      const isOnDashboard = pathname.startsWith("/dashboard");
+      const isOnAdmin = pathname.startsWith("/dashboard/admin");
+      const isOnOrganizer = pathname.startsWith("/dashboard/organizer");
+      const isOnAttendeeSubpage =
+        pathname.startsWith("/dashboard/attendee/tickets") ||
+        pathname.startsWith("/dashboard/attendee/orders");
+      const isOnDashboardHome =
+        pathname === "/dashboard" || pathname === "/dashboard/attendee";
 
       if (isOnDashboard) {
-        if (!isLoggedIn) return false; // redirect to /login
+        if (!isLoggedIn) return false;
 
-        // Role-based route protection
         const role = auth?.user?.role;
 
-        if (isOnAdmin && role !== "ADMIN") {
-          return Response.redirect(new URL("/dashboard", nextUrl));
+        // Attendees: allow tickets/orders pages, redirect everything else to /events
+        if (role === "ATTENDEE") {
+          if (isOnAttendeeSubpage) return true;
+          return Response.redirect(new URL("/events", nextUrl));
         }
+
+        // Non-admin trying admin routes
+        if (isOnAdmin && role !== "ADMIN") {
+          return Response.redirect(new URL("/dashboard/organizer", nextUrl));
+        }
+
+        // Non-organizer/non-admin trying organizer routes
         if (isOnOrganizer && role !== "ORGANIZER" && role !== "ADMIN") {
-          return Response.redirect(new URL("/dashboard", nextUrl));
+          return Response.redirect(new URL("/events", nextUrl));
         }
 
         return true;
       }
 
       // Redirect logged-in users away from auth pages
-      const isOnAuth =
-        nextUrl.pathname.startsWith("/login") || nextUrl.pathname.startsWith("/register");
+      const isOnAuth = pathname.startsWith("/login") || pathname.startsWith("/register");
       if (isOnAuth && isLoggedIn) {
-        return Response.redirect(new URL("/dashboard", nextUrl));
+        const role = auth?.user?.role;
+        if (role === "ATTENDEE") {
+          return Response.redirect(new URL("/events", nextUrl));
+        }
+        if (role === "ADMIN") {
+          return Response.redirect(new URL("/dashboard/admin", nextUrl));
+        }
+        return Response.redirect(new URL("/dashboard/organizer", nextUrl));
       }
 
       return true;
@@ -55,5 +75,5 @@ export const authConfig: NextAuthConfig = {
       return session;
     },
   },
-  providers: [], // providers added in auth.ts (server-only)
+  providers: [],
 };

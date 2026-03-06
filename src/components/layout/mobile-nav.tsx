@@ -12,13 +12,12 @@ import { signOutAction } from "@/actions/auth.actions";
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, isAuthenticated } = useCurrentUser();
+  const { user, isAuthenticated, isAttendee } = useCurrentUser();
 
   const dashboardHref = getDashboardRedirectByRole(user?.role || "ATTENDEE");
 
   return (
     <div className="md:hidden">
-      {/* Hamburger — HCI: Affordance */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="text-brand-charcoal hover:bg-brand-cream flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
@@ -30,14 +29,12 @@ export function MobileNav() {
 
       {isOpen && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Menu panel */}
           <nav
             className="border-brand-sage/20 fixed inset-x-0 top-16 z-50 border-b bg-white p-4 shadow-lg"
             aria-label="Mobile navigation"
@@ -58,11 +55,32 @@ export function MobileNav() {
 
               {isAuthenticated && user ? (
                 <>
-                  <Link href={dashboardHref as Route} onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start">
-                      Dashboard
-                    </Button>
-                  </Link>
+                  {isAttendee ? (
+                    <>
+                      <Link
+                        href="/dashboard/attendee/tickets"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Button variant="ghost" className="w-full justify-start">
+                          My Tickets
+                        </Button>
+                      </Link>
+                      <Link
+                        href="/dashboard/attendee/orders"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <Button variant="ghost" className="w-full justify-start">
+                          My Orders
+                        </Button>
+                      </Link>
+                    </>
+                  ) : (
+                    <Link href={dashboardHref as Route} onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        Dashboard
+                      </Button>
+                    </Link>
+                  )}
                   <Button
                     variant="ghost"
                     className="text-destructive hover:text-destructive w-full justify-start"

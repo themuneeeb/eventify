@@ -3,7 +3,7 @@ import {
   attendeeSidebarItems,
   adminSidebarItems,
   type NavItem,
-} from "./nav";
+} from "@/config/nav";
 
 export function getSidebarItemsByRole(role: string): NavItem[] {
   switch (role) {
@@ -11,22 +11,20 @@ export function getSidebarItemsByRole(role: string): NavItem[] {
       return adminSidebarItems;
     case "ORGANIZER":
       return organizerSidebarItems;
-    case "ATTENDEE":
-      return attendeeSidebarItems;
     default:
-      return attendeeSidebarItems;
+      return [];
   }
 }
 
-export function getDashboardRedirectByRole(role: string): string {
+export function getDashboardRedirectByRole(role: string) {
   switch (role) {
     case "ADMIN":
-      return "/dashboard/admin";
+      return "/dashboard/admin" as const;
     case "ORGANIZER":
-      return "/dashboard/organizer";
+      return "/dashboard/organizer" as const;
     case "ATTENDEE":
-      return "/dashboard/attendee";
+      return "/events" as const; // ← attendees go to browse events
     default:
-      return "/dashboard/attendee";
+      return "/events" as const;
   }
 }
