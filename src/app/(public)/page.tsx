@@ -1,9 +1,22 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Calendar, Ticket, Shield } from "lucide-react";
+import { EventCard } from "@/components/events/event-card";
+import {
+  getFeaturedEvents,
+  getCategoriesWithCount,
+} from "@/services/public-event.service";
+import { ArrowRight, Calendar, Ticket, Shield, Tag } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
-// SSG — fully static landing page (best LCP)
-export default function HomePage() {
+// ISR — revalidate landing page every 120 seconds
+export const revalidate = 120;
+
+export default async function HomePage() {
+  const [featuredEvents, categories] = await Promise.all([
+    getFeaturedEvents(6),
+    getCategoriesWithCount(),
+  ]);
+
   const features = [
     {
       icon: Calendar,
@@ -24,7 +37,7 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="container-main py-20 lg:py-32">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-brand-charcoal text-4xl font-bold tracking-tight sm:text-6xl">
@@ -48,10 +61,59 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features — HCI: Recognition over recall (icons + clear labels) */}
-      <section className="border-brand-sage/20 border-t bg-white py-20">
+      {/* Featured Events */}
+      {featuredEvents.length > 0 && (
+        <section className="border-brand-sage/20 border-t bg-white py-16">
+          <div className="container-main">
+            <div className="flex items-center justify-between">
+              <h2 className="text-brand-charcoal text-2xl font-bold">Upcoming Events</h2>
+              <Button variant="link" asChild>
+                <Link href="/events">
+                  View All <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {featuredEvents.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Categories */}
+      <section className="py-16">
         <div className="container-main">
-          <h2 className="text-brand-charcoal mb-12 text-center text-3xl font-bold">
+          <h2 className="text-brand-charcoal text-center text-2xl font-bold">
+            Browse by Category
+          </h2>
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {categories.map((cat) => (
+              <Link key={cat.id} href={`/categories/${cat.slug}`} className="group">
+                <Card className="transition-all group-hover:-translate-y-0.5 group-hover:shadow-md">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <Tag className="text-brand-orange h-4 w-4" />
+                    <div>
+                      <p className="text-brand-charcoal group-hover:text-brand-orange text-sm font-medium transition-colors">
+                        {cat.name}
+                      </p>
+                      <p className="text-brand-sage text-xs">
+                        {cat.eventCount} event{cat.eventCount !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="border-brand-sage/20 border-t bg-white py-16">
+        <div className="container-main">
+          <h2 className="text-brand-charcoal mb-12 text-center text-2xl font-bold">
             Why Choose Eventify?
           </h2>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -72,7 +134,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="bg-brand-charcoal py-20">
         <div className="container-main text-center">
           <h2 className="text-3xl font-bold text-white">Ready to get started?</h2>

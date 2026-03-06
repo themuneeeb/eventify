@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "utfs.io", // If using Uploadthing
       },
+      {
+        protocol: "https",
+        hostname: "cdn.vectorstock.com", // External demo/seed event images
+      },
     ],
   },
 };
