@@ -4,9 +4,34 @@ import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import { cn } from "../../lib/utils";
-import { ChevronLeft, ChevronRight, Ticket } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Ticket,
+  LayoutDashboard,
+  Calendar,
+  BarChart3,
+  Users,
+  Settings,
+  Tag,
+  MapPin,
+  Bell,
+  type LucideIcon,
+} from "lucide-react";
 import { useState } from "react";
-import { type NavItem } from "../../config/nav";
+import { type NavIconKey, type NavItem } from "../../config/nav";
+
+const navIconMap: Record<NavIconKey, LucideIcon> = {
+  layoutDashboard: LayoutDashboard,
+  calendar: Calendar,
+  ticket: Ticket,
+  barChart3: BarChart3,
+  users: Users,
+  settings: Settings,
+  tag: Tag,
+  mapPin: MapPin,
+  bell: Bell,
+};
 
 interface SidebarProps {
   items: NavItem[];
@@ -35,6 +60,7 @@ export function Sidebar({ items }: SidebarProps) {
       {/* Nav items */}
       <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         {items.map((item) => {
+          const ItemIcon = navIconMap[item.icon];
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
@@ -49,7 +75,7 @@ export function Sidebar({ items }: SidebarProps) {
               title={collapsed ? item.label : undefined}
               aria-current={isActive ? "page" : undefined}
             >
-              <item.icon className="h-5 w-5 shrink-0" />
+              <ItemIcon className="h-5 w-5 shrink-0" />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );

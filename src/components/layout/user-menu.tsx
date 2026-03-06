@@ -1,6 +1,5 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import Link from "next/link";
 import type { Route } from "next";
 import {
@@ -12,7 +11,7 @@ import {
   DropdownMenuLabel,
 } from "../../components/ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "../../components/ui/avatar";
-import { LayoutDashboard, LogOut, Settings, User } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { getDashboardRedirectByRole } from "../../config/dashboard";
 
 interface UserMenuProps {
@@ -23,7 +22,8 @@ interface UserMenuProps {
     role?: string;
   };
 }
-
+import { Badge } from "@/components/ui/badge";
+import { signOutAction } from "@/actions/auth.actions";
 export function UserMenu({ user }: UserMenuProps) {
   const initials = user.name
     ? user.name
@@ -35,6 +35,12 @@ export function UserMenu({ user }: UserMenuProps) {
     : "U";
 
   const dashboardHref = getDashboardRedirectByRole(user.role || "ATTENDEE");
+
+  const roleLabelMap: Record<string, string> = {
+    ADMIN: "Admin",
+    ORGANIZER: "Organizer",
+    ATTENDEE: "Attendee",
+  };
 
   return (
     <DropdownMenu>
@@ -52,9 +58,12 @@ export function UserMenu({ user }: UserMenuProps) {
 
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-1">
             <span className="text-brand-charcoal text-sm font-medium">{user.name}</span>
             <span className="text-brand-sage text-xs">{user.email}</span>
+            <Badge variant="secondary" className="mt-1 w-fit">
+              {roleLabelMap[user.role || "ATTENDEE"]}
+            </Badge>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -72,7 +81,9 @@ export function UserMenu({ user }: UserMenuProps) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={async () => {
+            await signOutAction();
+          }}
           className="text-destructive focus:text-destructive cursor-pointer"
         >
           <LogOut className="h-4 w-4" />

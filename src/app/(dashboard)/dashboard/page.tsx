@@ -1,16 +1,15 @@
-import { Badge } from "../../../components/ui/badge";
+import { auth } from "@/lib/auth";
+import type { Route } from "next";
+import { redirect } from "next/navigation";
+import { getDashboardRedirectByRole } from "../../../config/dashboard";
 
-// Will redirect per role in Phase 2. For now, a static overview.
-export default function DashboardPage() {
-  return (
-    <div>
-      <div className="flex items-center gap-3">
-        <h1 className="text-brand-charcoal text-2xl font-bold">Dashboard</h1>
-        <Badge>Phase 1</Badge>
-      </div>
-      <p className="text-brand-soft-black mt-2">
-        Welcome to your Eventify dashboard. Role-based routing comes in Phase 2.
-      </p>
-    </div>
-  );
+export default async function DashboardPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const targetPath = getDashboardRedirectByRole(session.user.role);
+  redirect(targetPath as Route);
 }

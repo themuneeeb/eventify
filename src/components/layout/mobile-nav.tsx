@@ -4,15 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { Menu, X } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { publicNavItems } from "../../config/nav";
+import { Button } from "@/components/ui/button";
+import { publicNavItems } from "@/config/nav";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { getDashboardRedirectByRole } from "@/config/dashboard";
+import { signOutAction } from "@/actions/auth.actions";
 
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isAuthenticated } = useCurrentUser();
+
+  const dashboardHref = getDashboardRedirectByRole(user?.role || "ATTENDEE");
 
   return (
     <div className="md:hidden">
-      {/* Hamburger trigger — HCI: Affordance */}
+      {/* Hamburger — HCI: Affordance */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="text-brand-charcoal hover:bg-brand-cream flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
@@ -22,7 +28,6 @@ export function MobileNav() {
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {/* Mobile menu overlay */}
       {isOpen && (
         <>
           {/* Backdrop */}
@@ -32,7 +37,7 @@ export function MobileNav() {
             aria-hidden="true"
           />
 
-          {/* Menu panel — HCI: Consistency with desktop nav */}
+          {/* Menu panel */}
           <nav
             className="border-brand-sage/20 fixed inset-x-0 top-16 z-50 border-b bg-white p-4 shadow-lg"
             aria-label="Mobile navigation"
@@ -51,15 +56,36 @@ export function MobileNav() {
 
               <div className="bg-brand-sage/20 my-2 h-px" />
 
-              <Link href={"/login" as Route} onClick={() => setIsOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
-                  Sign In
-                </Button>
-              </Link>
-
-              <Link href={"/register" as Route} onClick={() => setIsOpen(false)}>
-                <Button className="w-full">Get Started</Button>
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <Link href={dashboardHref as Route} onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive w-full justify-start"
+                    onClick={async () => {
+                      setIsOpen(false);
+                      await signOutAction();
+                    }}
+                  >
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/register" onClick={() => setIsOpen(false)}>
+                    <Button className="w-full">Get Started</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
         </>
