@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { inter } from "../lib/fonts";
+import { Providers } from "../providers/toast-provider";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen font-sans">{children}</body>
+      <body className="min-h-screen font-sans">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

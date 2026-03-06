@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  typedRoutes: true,
   images: {
     remotePatterns: [
       {
@@ -16,9 +17,6 @@ const nextConfig: NextConfig = {
         hostname: "utfs.io", // If using Uploadthing
       },
     ],
-  },
-  experimental: {
-    typedRoutes: true,
   },
 };
 

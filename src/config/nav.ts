@@ -13,11 +13,16 @@ import {
 
 export interface NavItem {
   label: string;
-  href: string;
+  href: `/${string}`;
   icon: LucideIcon;
 }
 
-export const publicNavItems = [
+export interface PublicNavItem {
+  label: string;
+  href: `/${string}`;
+}
+
+export const publicNavItems: PublicNavItem[] = [
   { label: "Events", href: "/events" },
   { label: "Categories", href: "/categories" },
 ];
