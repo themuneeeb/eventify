@@ -3,7 +3,6 @@ import { Topbar } from "../../../components/layout/topbar";
 import { getSidebarItemsByRole } from "../../../config/dashboard";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getDashboardRedirectByRole } from "../../../config/dashboard";
 
 export default async function DashboardLayout({
   children,

@@ -1,10 +1,8 @@
 "use client";
 
-import { Button } from "../components/ui/button";
-
 // Catastrophic root error boundary — wraps entire <html>
 export default function GlobalError({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string };
