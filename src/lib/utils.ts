@@ -42,3 +42,26 @@ export function generateTicketCode(): string {
 export function absoluteUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_APP_URL}${path}`;
 }
+
+/** Check if a URL points to a valid image (not a video/other link) */
+export function isValidImageUrl(url: string | null | undefined): url is string {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    // Reject known non-image sites
+    const blockedHosts = [
+      "youtube.com",
+      "www.youtube.com",
+      "youtu.be",
+      "vimeo.com",
+      "www.vimeo.com",
+      "tiktok.com",
+      "www.tiktok.com",
+    ];
+    if (blockedHosts.includes(parsed.hostname)) return false;
+    // Only allow http/https URLs
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Ticket } from "lucide-react";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, isValidImageUrl } from "@/lib/utils";
 
 interface EventCardProps {
   event: {
@@ -38,14 +38,17 @@ export function EventCard({ event }: EventCardProps) {
   );
   const isSoldOut = totalAvailable <= 0;
 
+  // Only use coverImage if it looks like a valid image URL (not a video/other link)
+  const coverImage = isValidImageUrl(event.coverImage) ? event.coverImage : null;
+
   return (
     <Link href={`/events/${event.slug}`} className="group block">
       <Card className="h-full overflow-hidden transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg">
         {/* Image — HCI: Affordance, visual hierarchy */}
         <div className="bg-brand-cream relative aspect-[16/10] w-full overflow-hidden">
-          {event.coverImage ? (
+          {coverImage ? (
             <Image
-              src={event.coverImage}
+              src={coverImage}
               alt={event.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
