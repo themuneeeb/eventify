@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventCard } from "@/components/events/event-card";
-import { formatDateTime, formatDate, formatCurrency } from "@/lib/utils";
+import { formatDateTime, formatDate, formatCurrency, isValidImageUrl } from "@/lib/utils";
 import { Calendar, MapPin, Clock, User, Ticket, Share2, ArrowLeft } from "lucide-react";
 import type { Metadata, Route } from "next";
 
@@ -99,7 +99,7 @@ export default async function EventDetailPage({
         <div className="lg:col-span-2">
           {/* Cover image */}
           <div className="bg-brand-cream relative aspect-[16/9] w-full overflow-hidden rounded-xl">
-            {event.coverImage ? (
+            {isValidImageUrl(event.coverImage) ? (
               <Image
                 src={event.coverImage}
                 alt={event.title}

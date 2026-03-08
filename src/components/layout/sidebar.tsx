@@ -14,8 +14,8 @@ import {
   Users,
   Settings,
   Tag,
+  ShoppingCart,
   MapPin,
-  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
@@ -29,8 +29,8 @@ const navIconMap: Record<NavIconKey, LucideIcon> = {
   users: Users,
   settings: Settings,
   tag: Tag,
+  shoppingCart: ShoppingCart,
   mapPin: MapPin,
-  bell: Bell,
 };
 
 interface SidebarProps {
